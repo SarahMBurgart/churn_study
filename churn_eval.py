@@ -5,6 +5,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestClassifier
 
 
 # import evaluations tools
@@ -17,28 +18,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-#import sys
-#sys.path.insert(0,"/Users/sarahburgart/galvanize/week6/random-forests/src/")
 
-
-#import roc
-#from roc import plot_roc
-
-
-#%matplotlib inline
-
-plt.style.use('ggplot')
-
-def cv_train_scores(models,model_names, X, y):
+def cv_train_scores(models,model_names, X, y, scoring1, scoring2):
     # already is Kfolds
     # takes fit models, names, X and y and returns ~ table of scores
     # returns name of model, MSE and R2 for 3 regressors
     res = []
     for name, model in zip(model_names, models):
-        mse = np.mean(cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error'))
-        r2 = np.mean(cross_val_score(model, X, y, cv=5, scoring='r2'))
+        mse = np.mean(cross_val_score(model, X, y, cv=5, scoring=scoring1))
+        r2 = np.mean(cross_val_score(model, X, y, cv=5, scoring=scoring2))
        
-        res.append(f"{name} Train CV | MSE: {mse:.3f} | R2: {r2:.3f} ")
+        res.append(f"{model.__class__.__name__} Train CV | {scoring1}: {mse:.3f} | {scoring2}: {r2:.3f} ")
     return res
 
 def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest):
@@ -109,20 +99,22 @@ def plot_feature_importances(model):
 
 # Random Forest
 def change_num_features(num_features, X, y, num_estimators):
-    # num_featuers is for range, and can be (1, stop) or (1,stop, step)
+    # num_featuers is stop for range only.
     # returns a plot of the model score against the num of features in each tree
-    num_features = range(num_features)
+    num_features = range(1, num_features)
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y)
+    scores = []
     for n in num_features:
-        model = RandomForestClassifier(oob_score=True, n_estimators=num_estimators, max_features= n)
+        model = RandomForestClassifier(oob_score=True, n_estimators=num_estimators, max_features=n)
         model.fit(Xtrain, ytrain)
         base_test = model.predict(Xtest)
         # accuracy of test set
         #model.score(Xtest, ytest)
         scores.append(model.score(Xtest, ytest))
-        plt.plot(num_features,scores)
+    print(scores)
+    plt.plot(num_features,scores)
 
-def neural_network(X,y, predict):
+def neural_network(X,y):
     # takes X and y as parameters
     # returns plot of yhat, train and test scores, parameters 
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y)
@@ -133,16 +125,18 @@ def neural_network(X,y, predict):
     test_score = model.score(Xtest, ytest)
     params = model.get_params()
 
-    xpts = range(len(model.predict(Xtrain)))
-    fig, ax = plt.subplots(1,1, figsize= (20,8))
+    print(f"train score: {train_score:.3f} | test_score: {test_score:.3f} | params: {params}")
+
+    #xpts = range(len(model.predict(Xtrain)))
+    #fig, ax = plt.subplots(1,1, figsize= (20,8))
     
-    ax.plot(xpts,model.predict(Xtrain), color='b' )
+    #ax.plot(xpts,model.predict(Xtrain), color='b' )
     #ax.plot(xpts, y_hat_test_lst, color='r')
-    ax.set_ylabel("yhat")
-    ax.set_xlabel("over xpts")
+    #ax.set_ylabel("yhat")
+    #ax.set_xlabel("over xpts")
 
     #plt.legend([f"{gdbr.__class__.__name__} Train - learning rate 0.1", f"{model.__class__.__name__} Test - learning rate 0.1"])
-    plt.show()
+    #plt.show()
 '''
 
 it is already implicitly in the cross_val_score above
