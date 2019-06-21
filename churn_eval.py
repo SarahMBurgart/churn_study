@@ -18,20 +18,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-
-def cv_train_scores(models,model_names, X, y, scoring1, scoring2):
+def cv_train_scores(models, X, y, scoring1, scoring2):
     # already is Kfolds
     # takes fit models, names, X and y and returns ~ table of scores
     # returns name of model, MSE and R2 for 3 regressors
     res = []
-    for name, model in zip(model_names, models):
+    for model in models:
         mse = np.mean(cross_val_score(model, X, y, cv=5, scoring=scoring1))
         r2 = np.mean(cross_val_score(model, X, y, cv=5, scoring=scoring2))
        
         res.append(f"{model.__class__.__name__} Train CV | {scoring1}: {mse:.3f} | {scoring2}: {r2:.3f} ")
     return res
 
-def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest):
+def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest, learning_rate,n_estimators):
     '''
     Parameters: estimator: GradientBoostingRegressor or AdaBoostRegressor
                 X_train: 2d numpy array
@@ -46,7 +45,7 @@ def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest):
     # staged_predict (self, X) predict regression target at each stage for X 
     # allows determining error on testing set after each stage - returns predicted value
     
-    model = estimator()
+    model = estimator(learning_rate=learning_rate, n_estimators=n_estimators)
     
     model.fit(Xtrain, ytrain)
     y_hat_train = model.staged_predict(Xtrain)
@@ -55,7 +54,7 @@ def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest):
     y_hat_train_lst = []
     y_hat_test_lst = []
     
-    xpts = range(1,101)
+    xpts = range(1,(n_estimators+1))
     
     for y in y_hat_train:
         y_hat_train_lst.append(mean_squared_error(ytrain, y))
@@ -71,7 +70,7 @@ def stage_score_plot(estimator, Xtrain, ytrain, Xtest, ytest):
     ax.set_ylabel("MSE")
     ax.set_xlabel("Iterations")
 
-    plt.legend([f"{model.__class__.__name__} Train - learning rate 0.1", f"{model.__class__.__name__} Test - learning rate 0.1"])
+    plt.legend([f"{model.__class__.__name__} Train - learning rate {learning_rate}", f"{model.__class__.__name__} Test - learning rate {learning_rate}"])
     plt.show()
 
 def plot_feature_importances(model):
@@ -120,7 +119,7 @@ def neural_network(X,y):
     Xtrain, Xtest, ytrain, ytest = train_test_split(X, y)
     model = MLPClassifier()
     model.fit(Xtrain, ytrain)
-    model.predict(Xtrain)
+    model.predict(Xtest)
     train_score = model.score(Xtrain, ytrain)
     test_score = model.score(Xtest, ytest)
     params = model.get_params()
